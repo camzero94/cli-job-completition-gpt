@@ -81,7 +81,7 @@ func ParseHTML(url string, ch chan<- string, chNumJobs chan<- int) {
 	}
 
 	doc, err := html.Parse(resp.Body)
-	j.ParseHTML(doc, 0, job)
+	j.ExtractInfo(doc, 0, job)
 
 	printJobs(j.JobsList)
 	fmt.Println("===================================================")
@@ -98,7 +98,7 @@ func ParseHTML(url string, ch chan<- string, chNumJobs chan<- int) {
 }
 
 // Function to Extract the Job104 List  Datatype: Job , Company, Link and Skills for the job
-func (j *JobListHandler) ParseHTML(n *html.Node, depth int, jobGlobal *Job104) {
+func (j *JobListHandler) ExtractInfo(n *html.Node, depth int, jobGlobal *Job104) {
 
 //Find Article Html Node
 	if n.Type == html.ElementNode && n.Data == "article" {
@@ -135,7 +135,7 @@ func (j *JobListHandler) ParseHTML(n *html.Node, depth int, jobGlobal *Job104) {
 
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		j.ParseHTML(c, depth+1, jobGlobal)
+		j.ExtractInfo(c, depth+1, jobGlobal)
 	}
 
 
