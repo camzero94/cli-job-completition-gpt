@@ -59,8 +59,6 @@ func (s *Server) handlerGetJobs (w http.ResponseWriter, r *http.Request){
   c:= util.NewCrawlerReq(job,skills,depth)
   fmt.Println(c)
   list := c.Crawler()
-  fmt.Println(list,"Welcome Data")
-
   json.NewEncoder(w).Encode(list)
 
 
