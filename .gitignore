@@ -1,2 +1,6 @@
 bin/*
 go.sum
+local-env/docker-compose.dev.yaml
+scrapper/pyScripts/venv
+*.mod
+
