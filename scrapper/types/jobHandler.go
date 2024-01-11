@@ -1,6 +1,7 @@
 package types
 import (
 	"golang.org/x/net/html"
+	"fmt"
 )
 
 type ResponseReq struct {
@@ -40,7 +41,7 @@ func (j *JobListHandler) ExtractInfo(n *html.Node, depth int, jobGlobal *Job104)
 	switch {
 	case n.Type == html.ElementNode && n.Data == "article":
 		extractGeneralInfo(n, jobGlobal)
-	case n.Type == html.ElementNode && n.Data == "a":
+	case n.Type == html.ElementNode && n.Data == "a" :
 		extractLink(n, jobGlobal)
 	case n.Type == html.ElementNode && n.Data == "span":
 		extractDate(n, jobGlobal)
@@ -72,8 +73,9 @@ func extractLink(n *html.Node, jobGlobal *Job104) {
 		if attr.Key == "href" {
 			temp = append(temp, attr.Val)
 		}
-		if attr.Val == "js-job-link" {
+		if attr.Val == "jobSeachResultTitle" {
 			jobGlobal.Link = "https:" + temp[0]
+			fmt.Printf("Hereeeee Extract Link %s\n", jobGlobal.Link)
 			temp = temp[:0]
 
 		}

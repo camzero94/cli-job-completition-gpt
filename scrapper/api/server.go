@@ -2,13 +2,24 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/camzero94/cli_job/scrapper/util"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
+	"time"
+
 	"github.com/camzero94/cli_job/scrapper/cache/db"
-	"fmt"
+	"github.com/camzero94/cli_job/scrapper/types"
+	"github.com/camzero94/cli_job/scrapper/util"
 	"github.com/go-redis/redis/v8"
 )
+
+type Response struct {
+	JobName string `json:"jobName"`
+	Skills  []string `json:"skills"`
+	Link	string `json:"link"`
+	Content string `json:"content"`
+}
 
 type Server struct {
 	listenaddr string
@@ -28,9 +39,7 @@ func (s *Server) Start() error {
 
 //Handler Function Middleware
 func (s *Server) handlerGetJobs(w http.ResponseWriter, r *http.Request) {
-
 	values := r.URL.Query()
-
 	myJob, ok := values["myJob"]
 	if !ok || myJob[0] == "" {
 		myError := fmt.Sprintf("Missing the Job in the query URL.")
@@ -64,23 +73,38 @@ func (s *Server) handlerGetJobs(w http.ResponseWriter, r *http.Request) {
 		Password: "changeme",
 		DB:       0,
 	})
+
 	// Create Custom Redis Cache
-	new_redis_cache := db.NewRedisCache(client)
+	ttl := time.Second * 4
+	new_redis_cache := db.NewRedisCache(client, ttl)
 
-	// Create Database
+	// Create Crawler Object
 	req := util.NewCrawlerReq(job, skills, pagination)
-	storage, _ := db.SearchEngine(new_redis_cache,req)
 
-	// json.NewEncoder(w).Encode(data)
+	// Create Storage Object with custom Redis Cache
+	storage, _ := db.SearchEngine(new_redis_cache, req)
+
+	// Create simple redis Key 
+	key := fmt.Sprintf("%s:%d", job, pagination)
+	valJsonString, err := storage.Get(key)
+	if err != nil {
+		fmt.Println(err)
+	}
+	var jobs []types.Job104
+	var answer []Response
+	err = json.Unmarshal([]byte(valJsonString), &jobs)
+	if err != nil{
+		log.Fatal(err)
+	}
+	for _, job := range jobs {
+		res := &Response{
+			JobName: job.JobName,
+			Skills:  job.Skills,
+			Link: job.Link,
+			Content: job.Content,
+		}
+		answer = append(answer, *res)
+	}
+
+	json.NewEncoder(w).Encode(answer)
 }
-
-// func main() {
-// 	for i := 0; i < 4; i++ {
-// 		val, err := s.Get("1")
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
-// 		fmt.Println(val)
-// 	}
-//
-// }

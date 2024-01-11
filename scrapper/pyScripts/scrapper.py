@@ -4,13 +4,13 @@ import requests
 import json
 
 def scrapper(url:str):
+    print("Url:",url)
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
         content = soup.find('p', class_='mb-5 r3 job-description__content text-break')
         requirements = soup.find('p', class_='m-0 r3 w-100')
 
-        print("Python:",content, requirements)
         if content and not requirements:
             print("ENTER HEREEE")
             requirements = ""
