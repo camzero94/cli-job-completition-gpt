@@ -43,6 +43,5 @@ func (c *CrawlerReq) Crawler() ([]types.Job104, error) {
 	fmt.Println("Received:", total)
 	fmt.Println("========Here=========")
 	fmt.Printf("Num Jobs: %d", total)
-
 	return j.JobsList, nil
 }

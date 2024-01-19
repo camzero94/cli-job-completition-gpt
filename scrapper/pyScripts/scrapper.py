@@ -12,7 +12,6 @@ def scrapper(url:str):
         requirements = soup.find('p', class_='m-0 r3 w-100')
 
         if content and not requirements:
-            print("ENTER HEREEE")
             requirements = ""
             content = content.text
         elif requirements and not content:

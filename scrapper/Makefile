@@ -1,8 +1,8 @@
 build:
-	@go build -o bin/fs
+	@go build -o bin/scrapper
 
 run: build
-	@./bin/fs
+	@./bin/scrapper
 
 test:
 	@go test ./... -v

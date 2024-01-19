@@ -16,9 +16,13 @@ import (
 
 type Response struct {
 	JobName string `json:"jobName"`
+	Company string `json:"company"`
 	Skills  []string `json:"skills"`
 	Link	string `json:"link"`
 	Content string `json:"content"`
+	Exp    string `json:"exp"`
+	Date   string `json:"date"`
+	Loc	string `json:"loc"`
 }
 
 type Server struct {
@@ -86,25 +90,28 @@ func (s *Server) handlerGetJobs(w http.ResponseWriter, r *http.Request) {
 
 	// Create simple redis Key 
 	key := fmt.Sprintf("%s:%d", job, pagination)
-	valJsonString, err := storage.Get(key)
+	jobsJsonString, err := storage.Get(key)
 	if err != nil {
 		fmt.Println(err)
 	}
 	var jobs []types.Job104
 	var answer []Response
-	err = json.Unmarshal([]byte(valJsonString), &jobs)
+	err = json.Unmarshal([]byte(jobsJsonString), &jobs)
 	if err != nil{
 		log.Fatal(err)
 	}
 	for _, job := range jobs {
 		res := &Response{
 			JobName: job.JobName,
-			Skills:  job.Skills,
+			Company: job.Company,
 			Link: job.Link,
 			Content: job.Content,
+			Skills:  job.Skills,
+			Date:    job.Date,
+			Exp: job.Exp,
+			Loc : job.Location,
 		}
 		answer = append(answer, *res)
 	}
-
 	json.NewEncoder(w).Encode(answer)
 }

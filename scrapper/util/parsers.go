@@ -29,8 +29,6 @@ func ExtractSkillsFromContent(content string) ([]string, string){
 	for oldTok, newTok := range replacements {
 		tokenizeContent = strings.ReplaceAll(tokenizeContent, oldTok, newTok)
 	}
-	fmt.Println("Here tokenizeContent", tokenizeContent)
-
 	tokenizeContentArr := strings.Split(tokenizeContent, " ")
 	for _,token:= range tokenizeContentArr{
 		token = strings.ToLower(token)
@@ -44,9 +42,10 @@ func ExtractSkillsFromContent(content string) ([]string, string){
 	return jobSkills, tokenizeContent
 }
 
-func GetContentSkillsParser(job types.Job104, chContent chan<- string, chSkills chan<- []string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func GetContentSkillsParser(job types.Job104, chContent chan<- string, chJobs chan <- types.Job104 , wg *sync.WaitGroup) {
 
+	defer wg.Done()
+	fmt.Println("Job link-------------------->:", job.Link)
 	// Create a new slice of skills
 	pyCmd := fmt.Sprintf(" && python pyScripts/scrapper.py %s", job.Link)
 	cmd := exec.Command("/bin/bash", "-c", "source pyScripts/venv/bin/activate"+pyCmd)
@@ -55,9 +54,14 @@ func GetContentSkillsParser(job types.Job104, chContent chan<- string, chSkills 
 		chContent <- fmt.Sprintf("Error: %v", err)
 		return
 	}
+
 	skills,content := ExtractSkillsFromContent(string(out))
-	chSkills <- skills	
-	chContent <- content
+	job.Skills = skills
+	job.Content = content
+	fmt.Println("Skills:", job.Skills)
+	fmt.Println("Content:", job.Content)
+	fmt.Println("====================================================================")
+	chJobs <- job
 }
 
 // Handle GET  Request URL
@@ -80,8 +84,8 @@ func GetDocHTMLParsed(url string) (*html.Node, error) {
 func GeneralHtmlHandler(url string, j *types.JobListHandler) error {
 	var job *types.Job104 = new(types.Job104)
 	var wg2 sync.WaitGroup
-	chContent := make(chan string, 40)
-	chSkills:= make(chan []string, 40)
+	chJobs:= make(chan types.Job104 ,20)
+	chContent:= make(chan string )
 
 	// Get Parsed *html.Node to be processed by ExtractInfo
 	doc, err := GetDocHTMLParsed(url)
@@ -95,27 +99,40 @@ func GeneralHtmlHandler(url string, j *types.JobListHandler) error {
 	// Iterate over Jobs links to get the content of the job
 	for _, job := range j.JobsList {
 		wg2.Add(1)
-		go GetContentSkillsParser(job, chContent,chSkills, &wg2)
+		go GetContentSkillsParser(job,chContent,chJobs, &wg2)
 	}
 	go func() {
 		wg2.Wait()
-		close(chContent)
-		close(chSkills)
+		fmt.Println("HERRRRRRRRRRRRRRJ Clossing")
+		close(chJobs)
 	}()
-	counter := 0
-
-	for content := range chContent {
-		j.JobsList[counter].Content = content
-		counter += 1
+	// counter := 0
+	var temp []types.Job104
+	for job := range chJobs{
+		temp = append(temp, job)
 	}
+	for i,job:= range temp{
+		j.JobsList[i] = job
 
-	counterIdx := 0
-	for skills := range (chSkills){
-		fmt.Println(counterIdx, skills)
-		j.JobsList[counterIdx].Skills = skills
-		counterIdx += 1
 	}
-
+	// for _,job:= range j.JobsList{
+	// 	fmt.Println("Name", job.JobName)
+	// 	fmt.Println("Link", job.Link)
+	// 	fmt.Println("Content Inside", job.Content)
+	// 	fmt.Println("Skills: INside", job.Skills)
+	// }
+	// for job := range chJobs{
+	// 	fmt.Println("HERRRRRRRRRRRRRRJ")
+	// 	fmt.Println("Name", job.JobName)
+	// 	fmt.Println("Link", job.Link)
+	// 	fmt.Println("Content Inside", job.Content)
+	// 	fmt.Println("Skills: INside", job.Skills)
+	// 	// job.Content = <-chContent
+	// 	// job.Skills = <-chSkills
+	// 	// j.JobsList[counter].Skills = <-chSkills
+	//
+	// 	// counter += 1
+	// }
 	return nil
 }
 

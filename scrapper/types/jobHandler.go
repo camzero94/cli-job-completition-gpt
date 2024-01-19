@@ -74,8 +74,8 @@ func extractLink(n *html.Node, jobGlobal *Job104) {
 			temp = append(temp, attr.Val)
 		}
 		if attr.Val == "jobSeachResultTitle" {
+			fmt.Printf("Hereeeee Extract https:%s\n", temp[0])
 			jobGlobal.Link = "https:" + temp[0]
-			fmt.Printf("Hereeeee Extract Link %s\n", jobGlobal.Link)
 			temp = temp[:0]
 
 		}
