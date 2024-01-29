@@ -3,26 +3,26 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strconv"
-	"time"
-
 	"github.com/camzero94/cli_job/scrapper/cache/db"
 	"github.com/camzero94/cli_job/scrapper/types"
 	"github.com/camzero94/cli_job/scrapper/util"
 	"github.com/go-redis/redis/v8"
+	"github.com/rs/cors"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 type Response struct {
-	JobName string `json:"jobName"`
-	Company string `json:"company"`
+	JobName string   `json:"jobName"`
+	Company string   `json:"company"`
 	Skills  []string `json:"skills"`
-	Link	string `json:"link"`
-	Content string `json:"content"`
-	Exp    string `json:"exp"`
-	Date   string `json:"date"`
-	Loc	string `json:"loc"`
+	Link    string   `json:"link"`
+	Content string   `json:"content"`
+	Exp     string   `json:"exp"`
+	Date    string   `json:"date"`
+	Loc     string   `json:"loc"`
 }
 
 type Server struct {
@@ -38,7 +38,18 @@ func NewServer(listenAddr string) *Server {
 //Start Server endpoint handler functions ->  Return
 func (s *Server) Start() error {
 	http.HandleFunc("/getJobs", s.handlerGetJobs)
-	return http.ListenAndServe(s.listenaddr, nil)
+	
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:8080"},
+		AllowCredentials: true,
+		AllowedHeaders:   []string{"*"},
+		// Enable Debugging for testing, consider disabling in production
+		Debug: true,
+	})
+	// Insert the middleware
+	handler := cors.Default().Handler(http.DefaultServeMux)
+	handler = c.Handler(handler)
+	return http.ListenAndServe(s.listenaddr, handler)
 }
 
 //Handler Function Middleware
@@ -88,7 +99,7 @@ func (s *Server) handlerGetJobs(w http.ResponseWriter, r *http.Request) {
 	// Create Storage Object with custom Redis Cache
 	storage, _ := db.SearchEngine(new_redis_cache, req)
 
-	// Create simple redis Key 
+	// Create simple redis Key
 	key := fmt.Sprintf("%s:%d", job, pagination)
 	jobsJsonString, err := storage.Get(key)
 	if err != nil {
@@ -97,19 +108,19 @@ func (s *Server) handlerGetJobs(w http.ResponseWriter, r *http.Request) {
 	var jobs []types.Job104
 	var answer []Response
 	err = json.Unmarshal([]byte(jobsJsonString), &jobs)
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 	for _, job := range jobs {
 		res := &Response{
 			JobName: job.JobName,
 			Company: job.Company,
-			Link: job.Link,
+			Link:    job.Link,
 			Content: job.Content,
 			Skills:  job.Skills,
 			Date:    job.Date,
-			Exp: job.Exp,
-			Loc : job.Location,
+			Exp:     job.Exp,
+			Loc:     job.Location,
 		}
 		answer = append(answer, *res)
 	}

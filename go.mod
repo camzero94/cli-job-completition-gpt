@@ -5,6 +5,7 @@ go 1.21.3
 require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/lib/pq v1.10.9
+	github.com/rs/cors v1.10.1
 	golang.org/x/net v0.19.0
 )
 
